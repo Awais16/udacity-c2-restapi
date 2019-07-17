@@ -21,16 +21,25 @@ router.get('/:id',
     async (req: Request, res: Response) => {
     let { id } = req.params;
     const item = await FeedItem.findByPk(id);
-    res.send(item);
+    if(item)
+        res.status(200).send(item);
+    res.status(400).send("Feed not found. id="+id);
 });
 
 // update a specific resource
 router.patch('/:id', 
     requireAuth, 
     async (req: Request, res: Response) => {
-        //@TODO try it yourself
-        res.send(500).send("not implemented")
+        let { id } = req.params;
+        let {caption,url}=req.body;
+        let item = await FeedItem.findByPk(id);
+        if(item){
+            item=await item.update({caption:caption,url:url});
+            res.status(200).send(item);
+        }else
+            res.status(404).send("Item not found!");
 });
+
 
 
 // Get a signed url to put a new item in the bucket
@@ -48,6 +57,7 @@ router.get('/signed-url/:fileName',
 router.post('/', 
     requireAuth, 
     async (req: Request, res: Response) => {
+
     const caption = req.body.caption;
     const fileName = req.body.url;
 
@@ -65,7 +75,7 @@ router.post('/',
             caption: caption,
             url: fileName
     });
-
+    
     const saved_item = await item.save();
 
     saved_item.url = AWS.getGetSignedUrl(saved_item.url);
